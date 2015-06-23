@@ -10,11 +10,12 @@ from setuptools import setup, find_packages
 from codecs import open
 from os import path
 
-here = path.abspath(path.dirname(__file__))
+def read(*parts):
+    filename = path.join(path.dirname(__file__), *parts)
+    with open(filename, encoding='utf-8') as fp:
+        return fp.read()
 
-# Get the long description from the relevant file
-with open(path.join(here, 'DESCRIPTION.rst'), encoding='utf-8') as f:
-    long_description = f.read()
+
 
 setup(
     name='angular-gettext-babel',
