@@ -37,9 +37,12 @@ def extract_angular(fileobj, keywords, comment_tags, options):
     A later version will address pluralization.
     """
 
-    regex = r'(<[\w-]+ translate>)([\w\d\s\.A\?\!]+)(</[\w-]+>)'
+    regex = r"""(<[\w-]+ translate>)([\w\d\s\.A\?\!$}{\[\]'"\)\(]+)(</[\w-]+>)"""
+    interpolation_regex = r"""{\$([\w\."'\]\[\(\)]+)\$}"""
 
     for line_no, line in enumerate(fileobj):
         matches = re.findall(regex, line)
         for match in matches:
-            yield (line_no + 1, u'gettext', match[1], [])
+            interpolated = re.sub(interpolation_regex, r'%(\1)', match[1])
+
+            yield (line_no + 1, u'gettext', interpolated, [])

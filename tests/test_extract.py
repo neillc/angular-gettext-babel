@@ -24,10 +24,50 @@ class ExtractAngularTestCase(unittest.TestCase):
         messages = list(extract_angular(buf, default_keys, [], {}))
         self.assertEqual([(1, 'gettext', 'hello world!', [])], messages)
 
-    def test_plural_string(self):
-        buf = StringIO('<span translate translate-n="msgCount" translate-plural="{{$count}} new messages">1 new message</span>')
+    def test_interpolation(self):
+        buf = StringIO('<html><div translate>hello {$name$}!</div>')
 
         messages = list(extract_angular(buf, default_keys, [], {}))
-        self.assertEqual([(1, 'gettext', 'hello world!', [])], messages)
+        self.assertEqual([(1, 'gettext', 'hello %(name)!', [])], messages)
+
+    def test_interpolation_func_call(self):
+        buf = StringIO('<html><div translate>hello {$func(name)$}!</div>')
+
+        messages = list(extract_angular(buf, default_keys, [], {}))
+        self.assertEqual([(1, 'gettext', 'hello %(func(name))!', [])], messages)
+
+    def test_interpolation_list(self):
+        buf = StringIO('<html><div translate>hello {$name[1]$}!</div>')
+
+        messages = list(extract_angular(buf, default_keys, [], {}))
+        self.assertEqual([(1, 'gettext', 'hello %(name[1])!', [])], messages)
+
+    def test_interpolation_dict(self):
+        buf = StringIO(r"<html><div translate>hello {$name['key']$}!</div>")
+
+        messages = list(extract_angular(buf, default_keys, [], {}))
+        self.assertEqual([(1, 'gettext', r"hello %(name['key'])!", [])], messages)
+
+    def test_interpolation_dict_double_quote(self):
+        buf = StringIO(r"""<html><div translate>hello {$name["key"]$}!</div>""")
+
+        messages = list(extract_angular(buf, default_keys, [], {}))
+        self.assertEqual([(1, 'gettext', r'hello %(name["key"])!', [])], messages)
+
+    def test_interpolation_object(self):
+        buf = StringIO('<html><div translate>hello {$name.attr$}!</div>')
+
+        messages = list(extract_angular(buf, default_keys, [], {}))
+        self.assertEqual([(1, 'gettext', 'hello %(name.attr)!', [])], messages)
+
+    def test_interpolation_spaces(self):
+        """
+        Spaces are not valid in interpolation expressions, but we don't
+        currently complain about them
+        """
+        buf = StringIO('<html><div translate>hello {$name attr$}!</div>')
+
+        messages = list(extract_angular(buf, default_keys, [], {}))
+        self.assertEqual([(1, 'gettext', 'hello {$name attr$}!', [])], messages)
 
 
