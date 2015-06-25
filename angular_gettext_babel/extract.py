@@ -27,29 +27,28 @@ class AngularGettextHTMLParser(html.parser.HTMLParser):
         super(AngularGettextHTMLParser,self).__init__()
         self.in_translate = False
         self.data = ''
+        self.strings = []
 
     def handle_starttag(self, tag, attrs):
-        print("Encounterd a start_tag:", tag, attrs, self.getpos())
-        self.in_translate = False
-        self.data = ''
         if attrs:
-            print ([attr[0] for attr in attrs])
             if 'translate' in [attr[0] for attr in attrs]:
-                print('translateable')
                 self.in_translate = True
 
     def handle_data(self, data):
-        self.data += data
-        print('data', self.data)
+        if self.in_translate:
+            self.data += data
 
     def handle_endtag(self, tag):
-        print('end!!!!')
         if self.in_translate:
-            print('this is translateable')
-            print ((1, u'gettext', self.data, []))
-            yield (1, u'gettext', self.data, [])
-        else:
-            print('not translateable')
+            self.strings.append((1, u'gettext', self.interpolate(), []))
+            self.in_translate = False
+            self.data = ''
+
+    def interpolate(self):
+        interpolation_regex = r"""{\$([\w\."'\]\[\(\)]+)\$}"""
+        return re.sub(interpolation_regex, r'%(\1)', self.data)
+
+
 def extract_angular(fileobj, keywords, comment_tags, options):
     """Extract messages from angular template (HTML) files that use the
     angular-gettext translate directive as per
@@ -73,30 +72,11 @@ def extract_angular(fileobj, keywords, comment_tags, options):
     A later version will address pluralization.
     """
 
-    regex = r'(<[\w-]+ translate>)([\w\d\s\.A\?\!]+)(</[\w-]+>)'
-
     parser = AngularGettextHTMLParser()
 
-    print('called')
-
     for line in fileobj:
-        # print(line)
         parser.feed(line)
 
-        # matches = re.findall(regex, line)
-        # for match in matches:
-        #     yield (line_no + 1, u'gettext', match[1], [])
+    for string in parser.strings:
+        yield(string)
 
-import io
-s = io.StringIO(initial_value="""<html>
-<div translate>text</div>
-</html>""")
-#extract_angular(s, [], [], {})
-# for ln, funcn, msg, xtra in extract_angular(s, [], [], {}):
-#     print(ln, funcn, msg, xtra)
-x = extract_angular(s, [], [], {})
-while x:
-    print('x=', x)
-    x = extract_angular(s, [], [], {})
-print(s)
-print('done')
