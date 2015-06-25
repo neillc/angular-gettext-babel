@@ -11,11 +11,16 @@
 #    WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
 #    License for the specific language governing permissions and limitations
 #    under the License.
-import html.parser
+
+try:
+    from html.parser import HTMLParser
+except ImportError:
+    from HTMLParser import HTMLParser
+
 import re
 
 
-class AngularGettextHTMLParser(html.parser.HTMLParser):
+class AngularGettextHTMLParser(HTMLParser):
     """
     Parse HTML to find translate directives.
 
@@ -24,7 +29,11 @@ class AngularGettextHTMLParser(html.parser.HTMLParser):
     """
 
     def __init__(self):
-        super(AngularGettextHTMLParser,self).__init__()
+        try:
+            super(self.__class__, self).__init__()
+        except TypeError:
+            HTMLParser.__init__(self)
+            
         self.in_translate = False
         self.data = ''
         self.strings = []
