@@ -70,4 +70,21 @@ class ExtractAngularTestCase(unittest.TestCase):
         messages = list(extract_angular(buf, default_keys, [], {}))
         self.assertEqual([(1, 'gettext', 'hello {$name attr$}!', [])], messages)
 
+    def test_attr_value(self):
+        """We should not translate tags that have translate as the value of an
+        attribute.
+        """
+        buf = StringIO('<html><div id="translate">hello world!</div>')
+
+        messages = list(extract_angular(buf, [], [], {}))
+        self.assertEqual([], messages)
+
+    def test_attr_value_plus_directive(self):
+        """Unless they also have a translate directive.
+        """
+        buf = StringIO('<html><div id="translate" translate>hello world!</div>')
+
+        messages = list(extract_angular(buf, [], [], {}))
+        self.assertEqual([(1, 'gettext', 'hello world!', [])], messages)
+
 
