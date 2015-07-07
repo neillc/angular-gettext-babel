@@ -19,6 +19,12 @@ except ImportError:
 
 import re
 import logging
+import locale
+
+def interpolate(data):
+    interpolation_regex = r"""{\$([\w\."'\]\[\(\)]+)\$}"""
+    return re.sub(interpolation_regex, r'%(\1)', data)
+
 
 
 class AngularGettextHTMLParser(HTMLParser):
@@ -61,20 +67,18 @@ class AngularGettextHTMLParser(HTMLParser):
         if self.in_translate:
             if self.plural_form:
                 messages = (
-                    self.interpolate(self.data),
-                    self.interpolate(self.plural_form)
+                    interpolate(self.data),
+                    interpolate(self.plural_form)
                 )
+                func_name = u'ngettext'
             else:
-                messages = self.interpolate(self.data)
+                messages = interpolate(self.data)
+                func_name = u'gettext'
             self.strings.append(
-                (self.line, u'gettext', messages, [])
+                (self.line, func_name, messages, [])
             )
             self.in_translate = False
             self.data = ''
-
-    def interpolate(self, data):
-        interpolation_regex = r"""{\$([\w\."'\]\[\(\)]+)\$}"""
-        return re.sub(interpolation_regex, r'%(\1)', data)
 
 
 def extract_angular(fileobj, keywords, comment_tags, options):
@@ -112,6 +116,8 @@ def extract_angular(fileobj, keywords, comment_tags, options):
     parser = AngularGettextHTMLParser()
 
     for line in fileobj:
+        if not isinstance(line, str):
+            line = line.decode(locale.getpreferredencoding())
         parser.feed(line)
 
     for string in parser.strings:
