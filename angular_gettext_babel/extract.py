@@ -18,11 +18,11 @@ except ImportError:
     from HTMLParser import HTMLParser
 
 import re
+import logging
 
 
 class AngularGettextHTMLParser(HTMLParser):
-    """
-    Parse HTML to find translate directives.
+    """Parse HTML to find translate directives.
 
     Note: This will not cope with nested tags (which I don't think make any
     sense)
@@ -33,15 +33,25 @@ class AngularGettextHTMLParser(HTMLParser):
             super(self.__class__, self).__init__()
         except TypeError:
             HTMLParser.__init__(self)
-            
+
         self.in_translate = False
         self.data = ''
         self.strings = []
+        self.line = 0
+        self.plural = False
+        self.plural_form = ''
 
     def handle_starttag(self, tag, attrs):
-        if attrs:
-            if 'translate' in [attr[0] for attr in attrs]:
+        if tag == 'translate' or \
+                (attrs and 'translate' in [attr[0] for attr in attrs]):
                 self.in_translate = True
+                self.line = self.getpos()[0]
+
+                self.plural_form = ''
+                for attr, value in attrs:
+                    if attr == 'translate-plural':
+                        self.plural = True
+                        self.plural_form = value
 
     def handle_data(self, data):
         if self.in_translate:
@@ -49,13 +59,22 @@ class AngularGettextHTMLParser(HTMLParser):
 
     def handle_endtag(self, tag):
         if self.in_translate:
-            self.strings.append((1, u'gettext', self.interpolate(), []))
+            if self.plural_form:
+                messages = (
+                    self.interpolate(self.data),
+                    self.interpolate(self.plural_form)
+                )
+            else:
+                messages = self.interpolate(self.data)
+            self.strings.append(
+                (self.line, u'gettext', messages, [])
+            )
             self.in_translate = False
             self.data = ''
 
-    def interpolate(self):
+    def interpolate(self, data):
         interpolation_regex = r"""{\$([\w\."'\]\[\(\)]+)\$}"""
-        return re.sub(interpolation_regex, r'%(\1)', self.data)
+        return re.sub(interpolation_regex, r'%(\1)', data)
 
 
 def extract_angular(fileobj, keywords, comment_tags, options):
@@ -65,7 +84,7 @@ def extract_angular(fileobj, keywords, comment_tags, options):
 
     :param fileobj: the file-like object the messages should be extracted
                     from
-    :param keywords: This is a standard parameter so it isaccepted but ignored.
+    :param keywords: This is a standard parameter so it is accepted but ignored.
 
     :param comment_tags: This is a standard parameter so it is accepted but
                         ignored.
@@ -81,6 +100,15 @@ def extract_angular(fileobj, keywords, comment_tags, options):
     A later version will address pluralization.
     """
 
+    if keywords:
+        logging.debug('Parameter keywords ignored.')
+
+    if comment_tags:
+        logging.debug('Parameter comment_tags ignored.')
+
+    if options:
+        logging.debug('Parameter options ignored.')
+
     parser = AngularGettextHTMLParser()
 
     for line in fileobj:
@@ -88,4 +116,3 @@ def extract_angular(fileobj, keywords, comment_tags, options):
 
     for string in parser.strings:
         yield(string)
-
