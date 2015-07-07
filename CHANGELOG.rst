@@ -1,11 +1,10 @@
 Changelog
 =========
 
-0.1.1 - `master`_
------------------
+0.2 - 2015-07-07
+----------------
 
-.. note:: This version is not yet released and is under active development.
-
+* Add support for pluralisation
 
 0.1 - 2015-06-23
 ----------------
@@ -13,4 +12,4 @@ Changelog
 * Initial upload to PyPI and github
 
 
-.. _`master`: https://github.com/neillc/angular-gettext-babel
+https://github.com/neillc/angular-gettext-babel
