@@ -46,6 +46,7 @@ class AngularGettextHTMLParser(HTMLParser):
         self.line = 0
         self.plural = False
         self.plural_form = ''
+        self.comments = []
 
     def handle_starttag(self, tag, attrs):
         if tag == 'translate' or \
@@ -58,6 +59,8 @@ class AngularGettextHTMLParser(HTMLParser):
                     if attr == 'translate-plural':
                         self.plural = True
                         self.plural_form = value
+                    if attr == 'translate-comment':
+                        self.comments.append(value)
 
     def handle_data(self, data):
         if self.in_translate:
@@ -75,10 +78,11 @@ class AngularGettextHTMLParser(HTMLParser):
                 messages = interpolate(self.data)
                 func_name = u'gettext'
             self.strings.append(
-                (self.line, func_name, messages, [])
+                (self.line, func_name, messages, self.comments)
             )
             self.in_translate = False
             self.data = ''
+            self.comments = []
 
 
 def extract_angular(fileobj, keywords, comment_tags, options):

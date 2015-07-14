@@ -19,7 +19,7 @@ def read(*parts):
 
 setup(
     name='angular-gettext-babel',
-    version='0.2',
+    version='0.3',
     description='A plugin for babel to work with angular-gettext templates',
     long_description=read('README.rst') + u'\n\n' + read('CHANGELOG.rst'),
     url='https://github.com/neillc/angular-gettext-babel',

@@ -162,9 +162,52 @@ class ExtractAngularTestCase(unittest.TestCase):
         messages = list(extract_angular(buf, [], [], {}))
         self.assertEqual(
             [
-                (1, 'gettext',
+                (1, 'ngettext',
                  ('hello one world!',
                   'hello %(count) worlds!'
                   ),
                  [])
             ], messages)
+
+    def test_translate_tag_comments(self):
+        buf = StringIO(
+            '<html><translate translate-comment='
+            '"What a beautiful world">hello world!</translate>')
+
+        messages = list(extract_angular(buf, [], [], {}))
+        self.assertEqual(
+            [
+                (1, 'gettext', 'hello world!', ['What a beautiful world'])
+            ],
+            messages)
+
+    def test_comments(self):
+        buf = StringIO(
+            '<html><div translate translate-comment='
+            '"What a beautiful world">hello world!</translate>')
+
+        messages = list(extract_angular(buf, [], [], {}))
+        self.assertEqual(
+            [
+                (1, 'gettext', 'hello world!', ['What a beautiful world'])
+            ],
+            messages)
+
+    def test_multiple_comments(self):
+        buf = StringIO(
+            '<html><div translate '
+            'translate-comment="What a beautiful world"'
+            'translate-comment="Another comment"'
+            '>hello world!</translate>')
+
+        messages = list(extract_angular(buf, [], [], {}))
+        self.assertEqual(
+            [
+                (1, 'gettext', 'hello world!',
+                 [
+                     'What a beautiful world',
+                     'Another comment'
+                 ])
+            ],
+            messages)
+
