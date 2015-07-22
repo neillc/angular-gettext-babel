@@ -1,3 +1,21 @@
+# Copyright 2015, Rackspace, US, Inc.
+#
+#    Licensed under the Apache License, Version 2.0 (the "License"); you may
+#    not use this file except in compliance with the License. You may obtain
+#    a copy of the License at
+#
+#         http://www.apache.org/licenses/LICENSE-2.0
+#
+#    Unless required by applicable law or agreed to in writing, software
+#    distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+#    WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+#    License for the specific language governing permissions and limitations
+#    under the License.
+
+
+default_keys = []
+
+
 import unittest
 
 from babel._compat import StringIO
@@ -29,110 +47,11 @@ class ExtractAngularTestCase(unittest.TestCase):
             ],
             messages)
 
-    def test_interpolation(self):
-        buf = StringIO(
-            """<html>
-            <translate>hello {$name$}!</translate>
-            <div translate>hello {$name$}!</div>
-            </html>
-            """
-        )
-
-        messages = list(extract_angular(buf, default_keys, [], {}))
-        self.assertEqual(
-            [
-                (2, u'gettext', 'hello %(name)!', []),
-                (3, u'gettext', 'hello %(name)!', [])
-            ], messages)
-
-    def test_interpolation_func_call(self):
-        buf = StringIO(
-            """<html><div translate>hello {$func(name)$}!</div>
-            '<translate>hello {$func(name)$}!</translate>"""
-        )
-
-        messages = list(extract_angular(buf, default_keys, [], {}))
-        self.assertEqual(
-            [
-                (1, u'gettext', 'hello %(func(name))!', []),
-                (2, u'gettext', 'hello %(func(name))!', [])
-            ],
-            messages)
-
-    def test_interpolation_list(self):
-        buf = StringIO(
-            """<html><div translate>hello {$name[1]$}!</div>
-            <translate>hello {$name[1]$}!</translate></html>"""
-        )
-
-        messages = list(extract_angular(buf, default_keys, [], {}))
-        self.assertEqual(
-            [
-                (1, 'gettext', 'hello %(name[1])!', []),
-                (2, 'gettext', 'hello %(name[1])!', [])
-            ],
-            messages)
-
-    def test_interpolation_dict(self):
-        buf = StringIO(
-            """<html><div translate>hello {$name['key']$}!</div>
-            <translate>hello {$name['key']$}!</translate></html>"""
-        )
-
-        messages = list(extract_angular(buf, default_keys, [], {}))
-        self.assertEqual(
-            [
-                (1, 'gettext', r"hello %(name['key'])!", []),
-                (2, 'gettext', r"hello %(name['key'])!", [])
-            ],
-            messages)
-
-    def test_interpolation_dict_double_quote(self):
-        buf = StringIO(
-            """<html><div translate>hello {$name["key"]$}!</div>
-            <translate>hello {$name["key"]$}!</translate></html>""")
-
-        messages = list(extract_angular(buf, default_keys, [], {}))
-        self.assertEqual(
-            [
-                (1, 'gettext', r'hello %(name["key"])!', []),
-                (2, 'gettext', r'hello %(name["key"])!', [])
-            ],
-            messages)
-
-    def test_interpolation_object(self):
-        buf = StringIO(
-            """<html><div translate>hello {$name.attr$}!</div>
-            <translate>hello {$name.attr$}!</translate></html>""")
-
-        messages = list(extract_angular(buf, default_keys, [], {}))
-        self.assertEqual(
-            [
-                (1, 'gettext', 'hello %(name.attr)!', []),
-                (2, 'gettext', 'hello %(name.attr)!', [])
-            ],
-            messages)
-
-    def test_interpolation_spaces(self):
-        """Spaces are not valid in interpolation expressions, but we don't
-        currently complain about them
-        """
-        buf = StringIO("""<html><div translate>hello {$name attr$}!</div>
-        <translate>hello {$name attr$}!</translate></html>""")
-
-        messages = list(extract_angular(buf, default_keys, [], {}))
-        self.assertEqual(
-            [
-                (1, 'gettext', 'hello {$name attr$}!', []),
-                (2, 'gettext', 'hello {$name attr$}!', [])
-            ],
-            messages)
-
     def test_attr_value(self):
         """We should not translate tags that have translate as the value of an
         attribute.
         """
-        buf = StringIO('<html><div id="translate">hello world!</div>')
+        buf = StringIO('<html><div id="translate">hello world!</div></html>')
 
         messages = list(extract_angular(buf, [], [], {}))
         self.assertEqual([], messages)
@@ -141,13 +60,13 @@ class ExtractAngularTestCase(unittest.TestCase):
         """Unless they also have a translate directive.
         """
         buf = StringIO(
-            '<html><div id="translate" translate>hello world!</div>')
+            '<html><div id="translate" translate>hello world!</div></html>')
 
         messages = list(extract_angular(buf, [], [], {}))
         self.assertEqual([(1, 'gettext', 'hello world!', [])], messages)
 
     def test_translate_tag(self):
-        buf = StringIO('<html><translate>hello world!</translate>')
+        buf = StringIO('<html><translate>hello world!</translate></html>')
 
         messages = list(extract_angular(buf, [], [], {}))
         self.assertEqual([(1, 'gettext', 'hello world!', [])], messages)
@@ -156,7 +75,7 @@ class ExtractAngularTestCase(unittest.TestCase):
         buf = StringIO(
             (
                 '<html><translate translate-plural="hello {$count$} worlds!">'
-                'hello one world!</translate>'
+                'hello one world!</translate></html>'
             ))
 
         messages = list(extract_angular(buf, [], [], {}))
@@ -164,7 +83,7 @@ class ExtractAngularTestCase(unittest.TestCase):
             [
                 (1, 'ngettext',
                  ('hello one world!',
-                  'hello %(count) worlds!'
+                  'hello {$count$} worlds!'
                   ),
                  [])
             ], messages)
@@ -172,7 +91,7 @@ class ExtractAngularTestCase(unittest.TestCase):
     def test_translate_tag_comments(self):
         buf = StringIO(
             '<html><translate translate-comment='
-            '"What a beautiful world">hello world!</translate>')
+            '"What a beautiful world">hello world!</translate></html>')
 
         messages = list(extract_angular(buf, [], [], {}))
         self.assertEqual(
@@ -184,7 +103,7 @@ class ExtractAngularTestCase(unittest.TestCase):
     def test_comments(self):
         buf = StringIO(
             '<html><div translate translate-comment='
-            '"What a beautiful world">hello world!</translate>')
+            '"What a beautiful world">hello world!</div></html>')
 
         messages = list(extract_angular(buf, [], [], {}))
         self.assertEqual(
@@ -195,10 +114,10 @@ class ExtractAngularTestCase(unittest.TestCase):
 
     def test_multiple_comments(self):
         buf = StringIO(
-            '<html><div translate '
+            '<html><translate '
             'translate-comment="What a beautiful world"'
             'translate-comment="Another comment"'
-            '>hello world!</translate>')
+            '>hello world!</translate></html>')
 
         messages = list(extract_angular(buf, [], [], {}))
         self.assertEqual(
@@ -210,4 +129,3 @@ class ExtractAngularTestCase(unittest.TestCase):
                  ])
             ],
             messages)
-

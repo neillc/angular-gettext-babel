@@ -17,14 +17,8 @@ try:
 except ImportError:
     from HTMLParser import HTMLParser
 
-import re
 import logging
 import locale
-
-def interpolate(data):
-    interpolation_regex = r"""{\$([\w\."'\]\[\(\)]+)\$}"""
-    return re.sub(interpolation_regex, r'%(\1)', data)
-
 
 
 class AngularGettextHTMLParser(HTMLParser):
@@ -70,12 +64,12 @@ class AngularGettextHTMLParser(HTMLParser):
         if self.in_translate:
             if self.plural_form:
                 messages = (
-                    interpolate(self.data),
-                    interpolate(self.plural_form)
+                    self.data,
+                    self.plural_form
                 )
                 func_name = u'ngettext'
             else:
-                messages = interpolate(self.data)
+                messages = self.data
                 func_name = u'gettext'
             self.strings.append(
                 (self.line, func_name, messages, self.comments)
