@@ -129,3 +129,16 @@ class ExtractAngularTestCase(unittest.TestCase):
                  ])
             ],
             messages)
+
+    def test_nested_tags(self):
+        buf = StringIO(
+            '<html><translate '
+            '>hello <b>Beautiful</b> world!</translate></html>')
+
+        messages = list(extract_angular(buf, [], [], {}))
+        self.assertEqual(
+            [
+                (1, 'gettext', 'hello <b>Beautiful</b> world!',
+                 [ ])
+            ],
+            messages)
